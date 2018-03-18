@@ -2,7 +2,7 @@
 # Hint18
 ### About The Project:
 
-Basically from ***Hasura*** we clustered the *hello-nodejs-express* to deploy our code in their platform.In our project we used the API of *facebook messanger* to create a chatbot(domain based AI) which is able to provide informations about the movies,tv series, asked by the user.To get the informations about the queries we have used the ***The Movie DB*** database api.Through out the project we are sucessfully exploring the ***Hasura*** and tring to make the bot too smart. 
+Basically from ***Hasura*** we clustered the *hello-nodejs-express* to deploy our code in their platform.In our project we used the API of *facebook messanger* to create a chatbot(***domain based AI***) which is able to provide informations about the movies,tv series, asked by the user.To get the informations about the queries we have used the ***The Movie DB*** database api.Through out the project we are sucessfully exploring the ***Hasura*** and tring to make the bot too smart. 
 
 **hello-nodejs-express**
 [<img src="https://res.cloudinary.com/hasura/image/upload/v1519823410/button1.png">](https://hasura.io/hub/projects/hasura/hello-nodejs-express)
