@@ -1,192 +1,238 @@
-const request = require('request');
-const bodyParser = require('body-parser');
-const express = require('express');
-const mdb = require('moviedb')('9b73a582469557fdf21162630f9e1bd1');
-
-const FACEBOOK_VERIFY_TOKEN = "my_tv_series_bot_password";
-const FACEBOOK_PAGE_ACCESS_TOKEN = "EAACZA6NOIb8UBACRTwM5sr1vYphDNhvjBZAs46ZACbBAZByWpTnXv1cxL0MsQJ9cHsJZAgsjdjVZBu1ZC7dTz5DcZCrZCZAJ6ZAuoypfjLeUyTjrQxFD4JVoPyBH4hApMNdid6we6PpNL9oG7wa5MEZBRJGXpNUY1luBSbJkkZCYhXxCjHpBZA4iOw2BH6Ubt3xVZCzrpAZD";
-const FACEBOOK_SEND_MESSAGE_URL = 'https://graph.facebook.com/v2.6/me/messages?access_token=' + FACEBOOK_PAGE_ACCESS_TOKEN;
-const MOVIE_DB_PLACEHOLDER_URL = 'http://image.tmdb.org/t/p/w185/';
-const MOVIE_DB_BASE_URL = 'https://www.themoviedb.org/discover/tv';
-
+/*var express = require('express');
 var app = express();
+var request = require('request');
+var router = express.Router();
+var morgan = require('morgan');
+var bodyParser = require('body-parser');
+var exphbs  = require('express-handlebars');
+require('request-debug')(request);
+
+var hasuraExamplesRouter = require('./hasuraExamples');
+
+var server = require('http').Server(app);
+
+router.use(morgan('dev'));
+
+app.engine('handlebars', exphbs({
+	defaultLayout: 'main',
+	helpers: {
+	    toJSON : function(object) {
+	      return JSON.stringify(object, null, 4);
+	    }
+  	}
+	})
+);
+app.set('view engine', 'handlebars');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-  extended: false
+  extended: true
 }));
 
-app.get('/', (req, res) => {
-	res.send('Hello, world!');
+app.use('/', hasuraExamplesRouter);
+
+app.listen(8080, function () {
+  console.log('Example app listening on port 8080!');
+});
+*/
+
+var request = require('request');
+var bodyParser = require('body-parser');
+var express = require('express');
+var app = express();
+
+let mdb = require('moviedb')('9b73a582469557fdf21162630f9e1bd1');
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
+
+let FB_VERIFY_TOKEN = "my_bot_password";
+let FB_PAGE_ACCESS_TOKEN ="EAACXZBDKj3RQBAD94QtXuObnvhZAZBdMU7bHosgVyugtHTCGtHrSVZB0lbaZBJRMxQ8Rd3uzqhICpMKQx8PAm2Llx3OTNPH0N15Jk6T4ZAb0b3AvxOHoQZBo1zKAqLmbWYxwMH4NycG6G7qmggTirwi4lT1wD5oI6HAXCeyZAHeToyAYBSxvTi3BjjcV578ruD4ZD";
+let FB_SEND_MESSAGE_URL = 'https://graph.facebook.com/v2.6/me/messages?access_token=' + FB_PAGE_ACCESS_TOKEN;
+
+let MOVIE_DB_PLACEHOLDER_URL = 'http://image.tmdb.org/t/p/w185/';
+
+app.get('/', function (req, res) {
+    res.send("Hello World, I am a bot.");
 });
 
-app.get('/path1', (req, res) => {
-	res.send({
-		msg: 'Got GET path 1!'
-	});
-});
-
-app.post('/path1', (req, res) => {
-	res.send({
-		msg: 'Got POST path 1!'
-	});
-});
 
 app.get('/webhook/', function(req, res) {
-  console.log(JSON.stringify(req.query, null, 4));
-  if (req.query['hub.verify_token'] === FACEBOOK_VERIFY_TOKEN) {
-        const challenge = req.query['hub.challenge'];
-        res.send(challenge);
+  if (req.query['hub.verify_token'] === FB_VERIFY_TOKEN) {
+        res.send(req.query['hub.challenge'])
     }
-    res.send('Error, wrong token');
+    res.send('Error, wrong token')
 });
 
 app.post('/webhook/', function(req, res) {
-  console.log(JSON.stringify(req.body, null, 4));
-  if (req.body.object === 'page') {
-    if (req.body.entry) {
-      req.body.entry.forEach(function(entry) {
-        if (entry.messaging) {
-          entry.messaging.forEach(function(messagingObject) {
-              const senderId = messagingObject.sender.id;
-              if (messagingObject.message) {
-                if (!messagingObject.message.is_echo) {
-                  //Assuming that everything sent to this bot is a movie name.
-                  const movieName = messagingObject.message.text;
-                  getMovieDetails(senderId, movieName);
-                }
-              } else if (messagingObject.postback) {
-                console.log('Received Postback message from ' + senderId);
-              }
-          });
-        } else {
-          console.log('Error: No messaging key found');
-        }
-      });
-    } else {
-      console.log('Error: No entry key found');
-    }
-  } else {
-    console.log('Error: Not a page object');
-  }
-  res.sendStatus(200);
-})
+	console.log('Request received at webhook: ' + JSON.stringify(req.body));
+	if(req.body.object == "page") {
+		req.body.entry.forEach(function(entry) {
+			if(entry.messaging) {
+				entry.messaging.forEach(function(event) {
+					if(event.message) {
+						handleMessageFromUser(event);
+					}
+					// if(event.postback) {
+					// 	handlePostback(event);
+					// } else if(event.message) {
+					// 	handleMessageFromUser(event);
+					// }
+				});
+			}
+		});
+		res.sendStatus(200);
+	}
+});
 
-const server = app.listen(8080, function () {
+function handleMessageFromUser(event) {
+	if(!event.message.is_echo) {
+		var message = event.message;
+		var senderId = event.sender.id;
+
+		console.log("Received message from senderId: " + senderId);
+		console.log("Message is: " + JSON.stringify(message));
+
+		if(message.text) {
+			let movieName = message.text;
+			findMovie(senderId, movieName);
+		} else if (message.attachments) {
+			sendMessage(senderId, "Sorry:( Currently,I can understand the text messages");
+		}
+	}
+}
+
+function findMovie(userId, movieName) {
+	sendTypingIndicator(userId, true);
+	console.log('Movie Name: ' + movieName);
+	mdb.searchMovie({ query: movieName }, (err, res) => {
+		sendTypingIndicator(userId, false);
+		if(err) {
+			sendMessage(userId, "Something went wrong.That is all I can say for now");
+			console.log('Error fetching data from DB: ' + err);
+		} else {
+			console.log('Response from DB: ' + JSON.stringify(res));
+			if(res.results) {
+				if(res.results.length > 0) {
+					var dataElements = [];
+					var count = 0;
+					res.results.forEach(function(result) {
+						count = count + 1;
+						if(count < 6) {
+							dataElements.push(getMovieElement(result));
+						}
+					});
+					var messageData = {
+						attachment: {
+							type: "templete",
+							playload: {
+								templete_type: "generic",
+								elements: dataElements
+							}
+						}
+					};
+					senderGenericMessage(userId, messageData);
+				} else {
+					sendMessage(userId, 'I have nothing to say about' + movieName);
+				}
+			} else {
+				sendMessage(userId, 'I have nothing to say about' + movieName);
+				console.log('Error fetching data from DB: ' + err);
+			}
+		}
+	});
+}
+
+function sendTypingIndicator(senderId, shouldShowIndicator) {
+	let senderAction = shouldShowIndicator ? 'typing_on' : 'typing_off';
+	request({
+		url: FB_SEND_MESSAGE_URL,
+		qs: {
+			access_token: FB_PAGE_TOKEN
+		},
+		method: 'POST',
+		json: {
+			recipient: { id: senderId },
+			sender_action: senderAction
+		}
+	}, function(error, response, body) {
+		if(error) {
+			console.log('Error sending Typing Indicator: ShouldShow: ' + senderAction, error)
+		} else if(response.body.error) {
+			console.log('Error sending Typing Indicator: ShouldShow: ' + senderAction, response.body.error)
+		}
+	});
+}
+
+function sendMessage(sender, cotent) {
+	request({
+		url: FB_SEND_MESSAGE_URL,
+		qs: {
+			access_token:FB_PAGE_TOKEN
+		},
+		method: 'POST',
+		json: {
+			recipient: { id:sender },
+			message: {
+				text: content
+			},
+		}
+	}, function(error, response, body) {
+		if(error) {
+			console.log('Error sending messages: ', error)
+		} else if(response.body.error) {
+			console.log('Error: ', response.body.error)
+		}
+	})
+}
+
+function getMovieElement(data) {
+	var playload = {
+
+	};
+	return {
+		title: data.original_title,
+		subtitle: data.overview,
+		image_url: !data.poster_path ? "http://placehold.it/350x150" : MOVIE_DB_PLACEHOLDER_URL + data.poster_path,
+		buttons: [
+			{
+				type:'web_url',
+				url:'https://www.themoviedb.org/movie/' + data.id + '-' + data.original_title,
+				title: 'More Details',
+				webview_height_ratio: 'compact'
+			}
+		]
+	}
+}
+
+/*function handlePostback(event) {
+	var senderId = event.sender.id;
+	var payload = event.postback.payload;
+	if(payload === "Greeting") {
+		var message = "My name is dearest bot made with Hasura...I can only now help you by providing the informations related to movies";
+		sendMessage(senderId, message);
+	}
+}
+*/
+function sendGenericMessage(sender, messageData) {
+	request({
+		url: 'https://graph.facebook.com/v2.6/me/messages',
+		qs: {access_token: FB_PAGE_TOKEN},
+		method: 'POST',
+		json: {
+			recipient: {id:sender},
+			message: messageData,
+		}
+	}, function(error, response, body) {
+		if(error) {
+			console.log('Error sending messages: ', error)
+		} else if(response.body.error) {
+			console.log('Error: ', response.body.error)
+		}
+	})
+}
+
+app.listen(8080, function () {
   console.log('Example app listening on port 8080!');
 });
 
-function sendUIMessageToUser(senderId, elementList) {
-  request({
-    url: FACEBOOK_SEND_MESSAGE_URL,
-    method: 'POST',
-    json: {
-      recipient: {
-        id: senderId
-      },
-      message: {
-        attachment: {
-          type: 'template',
-          payload: {
-            template_type: 'generic',
-            elements: elementList
-          }
-        }
-      }
-    }
-  }, function(error, response, body) {
-        if (error) {
-          console.log('Error sending UI message to user: ' + error.toString());
-        } else if (response.body.error){
-          console.log('Error sending UI message to user: ' + JSON.stringify(response.body.error));
-        }
-  });
-}
-
-function sendMessageToUser(senderId, message) {
-  request({
-    url: FACEBOOK_SEND_MESSAGE_URL,
-    method: 'POST',
-    json: {
-      recipient: {
-        id: senderId
-      },
-      message: {
-        text: message
-      }
-    }
-  }, function(error, response, body) {
-        if (error) {
-          console.log('Error sending message to user: ' + error);
-        } else if (response.body.error){
-          console.log('Error sending message to user: ' + response.body.error);
-        }
-  });
-}
-
-function showTypingIndicatorToUser(senderId, isTyping) {
-  var senderAction = isTyping ? 'typing_on' : 'typing_off';
-  request({
-    url: FACEBOOK_SEND_MESSAGE_URL,
-    method: 'POST',
-    json: {
-      recipient: {
-        id: senderId
-      },
-      sender_action: senderAction
-    }
-  }, function(error, response, body) {
-    if (error) {
-      console.log('Error sending typing indicator to user: ' + error);
-    } else if (response.body.error){
-      console.log('Error sending typing indicator to user: ' + response.body.error);
-    }
-  });
-}
-
-function getElementObject(result) {
-  var movieName  = result.original_title;
-  var overview = result.overview;
-  var posterPath = MOVIE_DB_PLACEHOLDER_URL + result.poster_path;
-  return {
-    title: movieName,
-    subtitle: overview,
-    image_url: posterPath,
-    buttons: [
-        {
-          type: "web_url",
-          url: MOVIE_DB_BASE_URL + result.id,
-          title: "View more details"
-        }
-    ]
-  };
-}
-
-function getMovieDetails(senderId, movieName) {
-  showTypingIndicatorToUser(senderId, true);
-  const message = 'Found details on ' + movieName;
-  mdb.searchMovie({ query: movieName }, (err, res) => {
-    showTypingIndicatorToUser(senderId, false);
-    if (err) {
-      console.log('Error using movieDB: ' + err);
-      sendMessageToUser(senderId, 'Error finding details on ' + movieName);
-    } else {
-      console.log(res);
-      if (res.results) {
-        if (res.results.length > 0) {
-          const elements = [];
-          const resultCount =  res.results.length > 5 ? 5 : res.results.length;
-          for (let i = 0; i < resultCount; i++) {
-            let result = res.results[i];
-            elements.push(getElementObject(result));
-          }
-          sendUIMessageToUser(senderId, elements);
-        } else {
-          sendMessageToUser(senderId, 'Could not find any informationg on ' + movieName);
-        }
-      } else {
-        sendMessageToUser(senderId, message);
-      }
-    }
-  });
-}
