@@ -1,5 +1,9 @@
 
 # Hint18
+### About The Project:
+
+Basically from ***Hasura*** we clustered the *hello-nodejs-express* to deploy our code in their platform.In our project we used the API of *facebook messanger* to create a chatbot(domain based AI) which is able to provide informations about the movies,tv series, asked by the user.To get the informations about the queries we have used the ***The Movie DB*** database api.Through out the project we are sucessfully exploring the ***Hasura*** and tring to make the bot too smart. 
+
 **hello-nodejs-express**
 [<img src="https://res.cloudinary.com/hasura/image/upload/v1519823410/button1.png">](https://hasura.io/hub/projects/hasura/hello-nodejs-express)
 
@@ -158,3 +162,5 @@ To learn more about the data apis, head over to our [docs](https://docs.hasura.i
 Sometimes, you would want to upload some files to the cloud. This can range from a profile pic for your user or images for things listed on your app. You can securely add, remove, manage, update files such as pictures, videos, documents using Hasura filestore.
 
 You can try out these in the `API EXPLORER` tab of the `api console`. To learn more, check out our [docs](https://docs.hasura.io/0.15/manual/users/index.html)
+
+
