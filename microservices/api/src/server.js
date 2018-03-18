@@ -1,41 +1,3 @@
-/*var express = require('express');
-var app = express();
-var request = require('request');
-var router = express.Router();
-var morgan = require('morgan');
-var bodyParser = require('body-parser');
-var exphbs  = require('express-handlebars');
-require('request-debug')(request);
-
-var hasuraExamplesRouter = require('./hasuraExamples');
-
-var server = require('http').Server(app);
-
-router.use(morgan('dev'));
-
-app.engine('handlebars', exphbs({
-	defaultLayout: 'main',
-	helpers: {
-	    toJSON : function(object) {
-	      return JSON.stringify(object, null, 4);
-	    }
-  	}
-	})
-);
-app.set('view engine', 'handlebars');
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-  extended: true
-}));
-
-app.use('/', hasuraExamplesRouter);
-
-app.listen(8080, function () {
-  console.log('Example app listening on port 8080!');
-});
-*/
-
 var request = require('request');
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -46,6 +8,9 @@ let mdb = require('moviedb')('9b73a582469557fdf21162630f9e1bd1');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
+const API_AI_TOKEN = 'bb0ab5a611ee4c7bbea60b14dc600443';
+var apiAiClient = require('apiai')(API_AI_TOKEN);
+
 let FB_VERIFY_TOKEN = "my_bot_password";
 let FB_PAGE_ACCESS_TOKEN ="EAACXZBDKj3RQBAD94QtXuObnvhZAZBdMU7bHosgVyugtHTCGtHrSVZB0lbaZBJRMxQ8Rd3uzqhICpMKQx8PAm2Llx3OTNPH0N15Jk6T4ZAb0b3AvxOHoQZBo1zKAqLmbWYxwMH4NycG6G7qmggTirwi4lT1wD5oI6HAXCeyZAHeToyAYBSxvTi3BjjcV578ruD4ZD";
 let FB_SEND_MESSAGE_URL = 'https://graph.facebook.com/v2.6/me/messages?access_token=' + FB_PAGE_ACCESS_TOKEN;
@@ -55,7 +20,6 @@ let MOVIE_DB_PLACEHOLDER_URL = 'http://image.tmdb.org/t/p/w185/';
 app.get('/', function (req, res) {
     res.send("Hello World, I am a bot.");
 });
-
 
 app.get('/webhook/', function(req, res) {
   if (req.query['hub.verify_token'] === FB_VERIFY_TOKEN) {
@@ -95,6 +59,14 @@ function handleMessageFromUser(event) {
 
 		if(message.text) {
 			let movieName = message.text;
+      const apiAiSession = apiAiClient.textRequest(message.text, { sessionId: 'my_bot_password' });
+
+      apiAiSession.on('response', response => {
+        const resText = response.result.fulfillment.speech;
+        sendMessage(senderId, resText);
+      });
+      apiAiSession.on('error', error => console.log(error));
+      apiAiSession.end();
 			findMovie(senderId, movieName);
 		} else if (message.attachments) {
 			sendMessage(senderId, "Sorry:( Currently,I can understand the text messages");
