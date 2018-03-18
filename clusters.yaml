@@ -5,3 +5,10 @@
   data: null
   kubeContext: antipodal86
   name: antipodal86
+- alias: production
+  config:
+    configmap: controller-conf
+    namespace: bummer28-hasura
+  data: null
+  kubeContext: bummer28
+  name: bummer28
